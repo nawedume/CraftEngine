@@ -1,17 +1,12 @@
 #include "Drawing.h"
 #include "GLFW/glfw3.h"
 #include "World.h"
-#include "Math.hpp"
 
 #include "utils.hpp"
 #include "worldrender.hpp"
 #include <OpenGL/gl.h>
 
 
-/**
-*  Max impulses after 2000 frames (10 normal, 0 relaxed): (0.468094, 0.173227, 0.155699).
-*  Max impulses after 2000 frames (5 normal, 5 relaxed): (0.504107, 0.180658, 0.145362)
-*/
 int main() {
     draw::GSystem *gsys = draw::InitGSystem(1000, 1000, -40.0f, 20.0f, 40.0f);
     gsys->mCamera.Yaw = -45.0f;

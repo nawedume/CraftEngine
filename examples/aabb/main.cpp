@@ -1,5 +1,4 @@
 #include "Core.h"
-#include "Debug.h"
 #include "Drawing.h"
 #include "GLFW/glfw3.h"
 #include "Math.hpp"
