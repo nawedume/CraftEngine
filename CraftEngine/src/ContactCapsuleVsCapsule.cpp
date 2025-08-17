@@ -5,7 +5,6 @@ namespace ce {
 void CapsuleAndCapsuleTest(u32 body1, u32 body2, Transform *transform1, Transform *transform2, BCapsule *cap1,
                            BCapsule *cap2, WorldContactSet *contactSet) {
 
-    // find distance between the two lines and clip, taken from https://paulbourke.net/geometry/pointlineplane/
     Vec3 c1N = rotate(Vec3(0.0, cap1->HalfLength, 0.0), transform1->Orientation);
     Vec3 p1 = transform1->Pos + c1N;
     Vec3 p2 = transform1->Pos - c1N;
@@ -14,71 +13,30 @@ void CapsuleAndCapsuleTest(u32 body1, u32 body2, Transform *transform1, Transfor
     Vec3 p3 = transform2->Pos + c2N;
     Vec3 p4 = transform2->Pos - c2N;
 
-    Real d_1343 = dot(p1 - p3, p4 - p3);
-    Real d_4321 = dot(p4 - p3, p2 - p1);
-    Real d_1321 = dot(p1 - p3, p2 - p1);
-    Real d_4343 = dot(p4 - p3, p4 - p3);
-    Real d_2121 = dot(p2 - p1, p2 - p1);
+    Vec3 d1 = p2 - p1;
+    Vec3 d2 = p4 - p3;
 
-    Real denom = (d_2121 * d_4343 - d_4321 * d_4321);
+    Vec3 d0 = p1 - p3;
+    Real d1d1 = dot(d1, d1);
+    Real d1d2 = dot(d1, d2);
+    Real d1d0 = dot(d1, d0);
+    Real d2d2 = dot(d2, d2);
+    Real d2d0 = dot(d2, d0);
 
-    Vec3 pA;
-    Vec3 pB;
-    if (abs(denom) < 1e-7) {
-        Vec3 normalA = normalize(p2 - p1);
-        if (dot(p4 - p3, normalA) < 0.0f) {
-            std::swap(p3, p4);
-        }
+    Real denom = d1d1*d2d2 - d1d2*d1d2;
 
-        Real p4_p1_dot = dot(p4 - p1, normalA);
-        Real p3_p1_dot = dot(p3 - p1, normalA);
-        Real p4_p2_dot = dot(p4 - p2, normalA);
-        Real p3_p2_dot = dot(p3 - p2, normalA);
-        if (p4_p1_dot <= 0.0f) {
-            // p4
-            pA = p1;
-            pB = p4;
-        } else if (p3_p2_dot >= 0.0) {
-            // p3
-            pA = p2;
-            pB = p3;
-        } else {
-            if (p3_p1_dot >= 0.0) {
-                // p3 is under p1, use p3
-                pA = p1 + normalA * p3_p1_dot;
-                pB = p3;
-            } else if (p4_p2_dot <= 0.0) {
-                // p4 is above p2, use p4
-                pA = p2 + normalA * p4_p2_dot;
-                pB = p4;
-            } else {
-                // p3 is above p1, and p4 is under p2, use p1
-                pA = p1;
-                pB = p3 + normalA * p3_p1_dot;
-            }
-        }
-
+    Real s;
+    if (denom > 1e-7) {
+        s = clamp((-d1d2*d2d0 + d1d0*d2d2) / denom, 0.0, 1.0);
     } else {
-        Real mua = (d_1343 * d_4321 - d_1321 * d_4343) / denom;
-        Real mub = (d_1343 + mua * d_4321) / d_4343;
-
-        if (mua <= 0.0f) {
-            pA = p1;
-        } else if (mua >= 1.0f) {
-            pA = p2;
-        } else {
-            pA = p1 + mua * (p2 - p1);
-        }
-
-        if (mub <= 0.0f) {
-            pB = p3;
-        } else if (mua >= 1.0f) {
-            pB = p4;
-        } else {
-            pB = p3 + mub * (p4 - p3);
-        }
+        // Parallel, set s to 0, and we'll clamp later on. Perhaps it's better to change to be closest to center?
+        s = 0.0;
     }
+    Real t = clamp((d1d2*s + d2d0) / d2d2, 0.0, 1.0);
+    s =  clamp((t*d1d2 - d1d0) / d1d1, 0.0, 1.0);
 
+    Vec3 pA = p1 + s*d1;
+    Vec3 pB = p3 + t*d2;
     Vec3 d = pB - pA;
     Real distance = length(d);
     Real penetration = cap1->Radius + cap2->Radius - distance;

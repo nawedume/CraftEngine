@@ -50,7 +50,7 @@ void HandleSphereAndHullDeepIntersection(u32 body1, u32 body2, Transform *transf
     u32 minimumFaceIdx = -1;
     for (u32 faceIdx = 0; faceIdx < hull->NumFaces; ++faceIdx) {
         Face *face = &hull->Faces[faceIdx];
-        Real distance = dot(localSphereCenterPoint, face->Normal);
+        Real distance = dot(localSphereCenterPoint, face->Normal) - face->D;
         if (distance < minimumFaceDistance) {
             minimumFaceDistance = distance;
             minimumFaceIdx = faceIdx;

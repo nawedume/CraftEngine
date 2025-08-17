@@ -101,6 +101,10 @@ inline Vec3 abs(Vec3 v) { return glm::abs(v); }
 
 inline Real abs(Real a) { return glm::abs(a); }
 
+inline Real cosh(Real a) {
+    return glm::cosh(a);
+}
+
 inline Mat3 matrixCross3(Vec3 v) {
     return glm::matrixCross3(v);
 }

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(Main)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -13,3 +13,4 @@ add_subdirectory(examples/boxstacking)
 add_subdirectory(examples/gjk)
 add_subdirectory(examples/aabb)
 add_subdirectory(examples/joints)
+add_subdirectory(examples/bowling)
