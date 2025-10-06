@@ -59,5 +59,7 @@ extern void DrawBall(GObject *gobj, Shader *shader, float px, float py, float pz
 
 extern void DrawObject(GObject* gobj, Shader* shader, float px, float py, float pz, float qw, float qx, float qy, float qz);
 
+extern void DrawObject(GObject* gobj, Shader* shader, float px, float py, float pz, float qw, float qx, float qy, float qz, float sx, float sy, float sz);
+
 extern GSystem *InitGSystem(int windowWidth, int windowHeight, float px, float py, float pz);
 } // namespace draw

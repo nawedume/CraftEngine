@@ -6,10 +6,12 @@
 namespace ce {
     typedef float Real;
 
+    typedef glm::vec2 Vec2;
     typedef glm::vec3 Vec3;
     typedef glm::mat3 Mat3;
     typedef glm::mat4 Mat4;
     typedef glm::quat Quat;
+    typedef glm::ivec3 Vec3i;
 
     typedef uint8_t u8;
     typedef uint16_t u16;

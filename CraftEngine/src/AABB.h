@@ -1,7 +1,6 @@
 #include "Geometry.h"
 #include "Math.hpp"
 #include "World.h"
-#include "utils.hpp"
 
 namespace ce {
 

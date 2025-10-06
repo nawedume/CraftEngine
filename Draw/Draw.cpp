@@ -152,6 +152,18 @@ void DrawObject(GObject* gobj, Shader* shader, float px, float py, float pz, flo
     glDrawElements(GL_TRIANGLES, gobj->NumElements, GL_UNSIGNED_INT, nullptr);
 }
 
+void DrawObject(GObject* gobj, Shader* shader, float px, float py, float pz, float qw, float qx, float qy, float qz, float sx, float sy, float sz) {
+    glBindVertexArray(gobj->Vao);
+    glm::mat4 t = glm::identity<glm::mat4>();
+    t = glm::translate(t, glm::vec3(px, py, pz));
+    t = t * glm::mat4(glm::quat(qw, qx, qy, qz));
+    t = glm::scale(t, glm::vec3(sx, sy ,sz));
+    shader->use();
+    shader->setFloatMat4("uWorldTransform", (float *)glm::value_ptr(t));
+    shader->setVec3("uBaseColor", (float *)glm::value_ptr(gobj->BaseColor));
+    glDrawElements(GL_TRIANGLES, gobj->NumElements, GL_UNSIGNED_INT, nullptr);
+}
+
 void DrawPrep(GSystem *gsys) {
     gsys->mCurrentTime = glfwGetTime();
     gsys->mShader.use();

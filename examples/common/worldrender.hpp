@@ -15,7 +15,7 @@ inline void DrawWorld(draw::GObject *objects, ce::World *world, draw::GSystem *g
             draw::DrawBox(&gobj, &gsys->mShader, t.Pos.x, t.Pos.y, t.Pos.z, t.Orientation.w, t.Orientation.x,
                           t.Orientation.y, t.Orientation.z);
             break;
-        case ce::CAPSULE:
+        case ce::ColliderId::CAPSULE:
             draw::DrawObject(&gobj, &gsys->mShader, t.Pos.x, t.Pos.y, t.Pos.z, t.Orientation.w, t.Orientation.x,
                            t.Orientation.y, t.Orientation.z);
             break;

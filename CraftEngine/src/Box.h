@@ -1,29 +1,6 @@
-#pragma once
-
-#include "Core.h"
-#include <stdio.h>
-#include <string>
 #include "World.h"
-#include "Drawing.h"
 
-inline void const PrintVec(std::string const& prefix, ce::Vec3 v) {
-    printf("%s: (%f, %f, %f)\n", prefix.c_str(), v.x, v.y, v.z);
-}
-
-static void const PrintVec3(std::string const& prefix, float* v) {
-    printf("%s: (%f, %f, %f)\n", prefix.c_str(), v[0], v[1], v[2]);
-}
-
-inline void const PrintQuat(std::string const& prefix, ce::Quat v) {
-    printf("%s: (%f, %f, %f, %f)\n", prefix.c_str(), v.x, v.y, v.z, v.w);
-}
-
-inline void const PrintMat3(std::string title, ce::Mat3 mat) {
-    printf("%s = ", title.c_str());
-    for (int i = 0; i < 3; ++i) {
-        printf("%f, %f, %f\n", mat[i][0], mat[i][1], mat[i][2]);
-    }
-}
+namespace ce {
 
 static ce::ConvexHull* CreateBoxConvexHull(ce::Transform& t, ce::Vec3 halfEdge) {
     ce::ConvexHull* hull = new ce::ConvexHull(6, 24, 8);
@@ -93,42 +70,4 @@ static ce::ConvexHull* CreateBoxConvexHull(ce::Transform& t, ce::Vec3 halfEdge) 
 
     return hull;
 }
-
-static ce::BodyId CreateBox(std::vector<draw::GObject>& objs, ce::World* world, ce::Transform t, ce::ConvexHullDef* def, ce::Vec3 halfEdge, ce::Vec3 color, bool isStatic) {
-    def->Hull = CreateBoxConvexHull(t, halfEdge);
-
-    ce::BodyId bid;
-    if (!isStatic) {
-        ce::Mat3 inertia = ce::Mat3 {
-            (1.0f / 12.0f) * (def->Mass * (halfEdge.y*halfEdge.y + halfEdge.z*halfEdge.z)), 0.0f, 0.0f,
-            0.0f, (1.0f / 12.0f) * (def->Mass * (halfEdge.x*halfEdge.x + halfEdge.z*halfEdge.z)), 0.0f,
-            0.0f, 0.0f, (1.0f / 12.0f) * (def->Mass * (halfEdge.y*halfEdge.y + halfEdge.x*halfEdge.x))
-        };
-        def->Inertia = inertia;
-        bid = ce::AddConvexHull(world, t, *def);
-    } else {
-        bid = ce::AddStaticConvexHull(world, t, *def);
-    }
-
-    draw::GObject obj = draw::CreateBox(halfEdge.x, halfEdge.y, halfEdge.z);
-    obj.BaseColor = color;
-    objs.push_back(obj);
-    return bid;
-}
-
-static ce::BodyId CreateBall(std::vector<draw::GObject>& objs, ce::World* world, ce::Transform t, ce::SphereDef* def, int res, ce::Vec3 color) {
-    ce::BodyId bid = ce::AddSphere(world, t, *def);
-    draw::GObject obj = draw::CreateBall(def->Radius, res, res);
-    obj.BaseColor = color;
-    objs.push_back(obj);
-    return bid;
-}
-
-static ce::BodyId CreateCapsule(std::vector<draw::GObject>& objs, ce::World* world, ce::Transform t, ce::CapsuleDef* def, int res, ce::Vec3 color) {
-    ce::BodyId bid = ce::AddCapsule(world, t, *def);
-    draw::GObject obj = draw::CreateCapsule(def->Radius, def->HalfLength, res, res);
-    obj.BaseColor = color;
-    objs.push_back(obj);
-    return bid;
-
 }

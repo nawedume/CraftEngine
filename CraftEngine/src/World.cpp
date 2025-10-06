@@ -2,9 +2,11 @@
 #include "AABB.h"
 #include "BroadPhase.h"
 #include "Contact.h"
+#include "Core.h"
 #include "JointSolver.h"
 #include "Math.hpp"
 #include "Solver.h"
+#include "Box.h"
 
 namespace ce {
 Mat4 Transform::Matrix() {
@@ -309,6 +311,30 @@ BodyId AddStaticConvexHull(World *world, Transform &transform, ConvexHullDef &de
 }
 
 void ConvexHull::CalculateBounds() { Bounds = CalculateTightFittingAABBForHullInLocalSpace(this); }
+
+BodyId AddBox(World *world, Transform &transform, BoxDef &def) {
+    ConvexHull* hull = CreateBoxConvexHull(transform, def.HalfEdge);
+
+    Real x2 = 2.0 * def.HalfEdge.x;
+    Real y2 = 2.0 * def.HalfEdge.y;
+    Real z2 = 2.0 * def.HalfEdge.z;
+
+    x2 *= x2 * (1. / 12.) * def.Mass;
+    y2 *= y2 * (1. / 12.) * def.Mass;
+    z2 *= z2 * (1. / 12.) * def.Mass;
+
+    ConvexHullDef chDef = {
+        .Mass = def.Mass,
+        .Inertia = Mat3 {
+            y2 + z2, 0.0, 0.0,
+            0.0, x2 + z2, 0.0,
+            0.0, 0.0, x2 + y2
+        },
+        .Hull = hull,
+    };
+
+    return AddConvexHull(world, transform, chDef);
+}
 
 JointId AddRevoluteJoint(World *world, BodyId b1, BodyId b2, Vec3 globalAnchor) {
     RevoluteJoint outJoint;

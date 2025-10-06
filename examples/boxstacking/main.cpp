@@ -3,6 +3,7 @@
 #include "World.h"
 #include "Math.hpp"
 
+#include "camera.hpp"
 #include "utils.hpp"
 #include "worldrender.hpp"
 #include <OpenGL/gl.h>
@@ -15,14 +16,15 @@
 int main() {
     draw::GSystem *gsys = draw::InitGSystem(1000, 1000, -20.0f, 10.0f, 20.0f);
     gsys->mCamera.Yaw = -45.0f;
-    ; //= 45.0f;
     gsys->mCamera.Pitch = -15.0f;
-    ; //= 45.0f;
     gsys->mLightDir = ce::Vec3(1.0f, 1.0f, 1.0f);
     std::vector<draw::GObject> gobjects;
     ce::World *world = ce::NewWorld();
     world->Settings.NumOfSolverIterations = 10;
     world->Settings.NumOfRelaxationIterations = 0;
+
+    // Debug
+    draw::GObject impulseArrow = draw::CreateArrow(.1, .05, 1., .9);
 
     ce::ConvexHullDef floorDef = ce::ConvexHullDef{};
     ce::BodyId floor =
@@ -38,7 +40,6 @@ int main() {
                   ce::Transform{.Pos = {0.0f, 2.0f + (i * 2.1), 0.0f}}, &boxDef,
                   ce::Vec3(2.0, 1.0, 2.0), ce::Vec3(0.5, 0.1, 0.1), false);
     }
-    PrintMat3("ii", world->RigidBodiesBase[1].InverseInertiaLocal);
 
     draw::GObject debugBall = draw::CreateBall(0.1f, 6, 6);
     debugBall.BaseColor = ce::Vec3(1.0, 1.0, 1.0);
@@ -47,6 +48,7 @@ int main() {
     float stepSize = 1.0f / 60.0f;
     while (!glfwWindowShouldClose(gsys->mWindow)) {
         static bool pause = true;
+        printf("Iteration %d\n", frame);
 
         if (!pause) {
             ce::Step(world, stepSize);
@@ -77,8 +79,23 @@ int main() {
 
         draw::DrawPrep(gsys);
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         DrawWorld(gobjects.data(), world, gsys);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+        {
+            auto cs = world->ContactSet;
+            for (int idx = 0; idx < cs->Size(); ++idx) {
+                ce::ManifoldId mid = cs->ManifoldIds[idx];
+                ce::Manifold manifold = cs->Manifolds[idx];
+                for (int pointIdx = 0; pointIdx < manifold.NumPoints; ++pointIdx) {
+                    ce::ContactPoint p = manifold.Points[pointIdx];
+                    auto p1 = p.RelContactPoint1 + world->Transforms[mid.Body1].Pos;
+                    draw::DrawObject(&impulseArrow, &gsys->mShader, p1.x, p1.y, p1.z, 0, 0, 1, 0, 1, p.NImpulse * 10, 1);
+                }
+            }
+        }
+        printf("Size of store %lu\n", world->StoredImpulses.Store.size());
 
         glfwSwapBuffers(gsys->mWindow);
         glfwPollEvents();

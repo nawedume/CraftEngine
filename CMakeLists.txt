@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.11)
 project(Main)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -14,3 +14,4 @@ add_subdirectory(examples/gjk)
 add_subdirectory(examples/aabb)
 add_subdirectory(examples/joints)
 add_subdirectory(examples/bowling)
+add_subdirectory(editor)
