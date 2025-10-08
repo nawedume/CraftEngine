@@ -1,3 +1,4 @@
+#include "Math.hpp"
 #include "camera.hpp"
 #include "editor.h"
 #include "World.h"
@@ -32,18 +33,19 @@ static void EditorModeKeyCallback(GLFWwindow* window, int key, int sc, int actio
 
     switch (editor->Mode) {
         case EditorMode::Select:
-        if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-            editor->ToggleToMoveMode();
-        }
         break;
-
         case EditorMode::Move:
-        if (key == GLFW_KEY_M && action == GLFW_PRESS) {
-            editor->ToggleToSelectMode();
-        }
         break;
     }
 }
+
+static void EditorScrollWheelCallback(GLFWwindow* window, double xoffset, double yoffset) {
+    Editor* editor = (Editor*) glfwGetWindowUserPointer(window);
+    assert(editor != NULL);
+
+    editor->UpdateCameraMovementSpeed(yoffset);
+}
+
 
 Editor::Editor(GLFWwindow* window): Window(window) {
     int width, height;
@@ -64,6 +66,7 @@ Editor::Editor(GLFWwindow* window): Window(window) {
     this->Mode = EditorMode::Select;
     glfwSetWindowUserPointer(Window, this);
     glfwSetKeyCallback(Window, EditorModeKeyCallback);
+    glfwSetScrollCallback(Window, EditorScrollWheelCallback);
 
     GLuint quadVao;
     glGenVertexArrays(1, &quadVao);
@@ -226,7 +229,7 @@ void Editor::DrawObject(BodyId bid, DrawContext& context) {
 }
 
 void Editor::DrawWorld() {
-    DrawGrid();
+    // DrawGrid();
 
     Mat4 cameraMat = this->ViewCamera->GetViewMatrix();
     SolidShader->use();
@@ -289,11 +292,18 @@ void Editor::ToggleToSelectMode() {
 }
 
 void Editor::HandleInput() {
-   switch (this->Mode) {
+
+    switch (this->Mode) {
         case EditorMode::Select:
+            if (glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+                ToggleToMoveMode();
+            }
             break;
         case EditorMode::Move:
             HandleCameraMoveMotion();
+            if (glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE) {
+                ToggleToSelectMode();
+            }
             break;
    }
 }
@@ -308,5 +318,11 @@ void Editor::DrawGrid() {
 
     glBindVertexArray(GridDrawContext.MeshDataVao);
     glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+void Editor::UpdateCameraMovementSpeed(float speedIncrement) {
+    float newSpeed = ViewCamera->MovementSpeed + speedIncrement;
+    newSpeed = clamp(newSpeed, 1e-6, 1000.0);
+    ViewCamera->MovementSpeed = newSpeed;
 }
 }

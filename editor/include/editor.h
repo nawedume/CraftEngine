@@ -48,6 +48,8 @@ namespace ceeditor {
         void ToggleToMoveMode();
         void ToggleToSelectMode();
 
+        void UpdateCameraMovementSpeed(float speedIncrement);
+
         // @todo
         // void DrawDebug();
         EditorMode Mode;
