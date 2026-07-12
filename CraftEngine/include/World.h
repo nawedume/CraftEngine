@@ -81,7 +81,7 @@ namespace ce {
 
     struct Material {
         Real Restitution { 0.0f };
-        Real Friction { 0.2f };
+        Real Friction { 0.5f };
     };
 
     struct WorldContactSet;
@@ -307,8 +307,8 @@ namespace ce {
         // Tangent Impulse
         Real TImpulse[2];
 
-        Real NInverseEffectiveMass;
-        Real TInverseEffectiveMass[2];
+        Real NEffectiveMass;
+        Real TEffectiveMass[2];
 
         Real Bias { 0.0f };
     };

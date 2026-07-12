@@ -100,7 +100,7 @@ int main() {
                 }
 
                 if (mid.Body1 == 2 && mid.Body2 == 3) {
-                    pause = true;
+                    // pause = true;
                     // ce::PrintVec3("Normal: ", manifold.Normal);
                     // draw::DrawBall(&debugBall, &gsys->mShader, 0.000000, 1.990436, -1.251796, 1.0, 0.0, 0.0, 0.0);
                     // auto pp = ce::Vec3(0.000000, 1.990436, -1.877131) + manifold.Normal;

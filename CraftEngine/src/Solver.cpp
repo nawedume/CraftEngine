@@ -39,21 +39,21 @@ void PrepManifolds(WorldContactSet *contactSet, RigidBody *bodies, Material *mat
             point->R1xT[1] = cross(point->RelContactPoint1, manifold->Tangents[1]);
             point->R2xT[1] = cross(point->RelContactPoint2, manifold->Tangents[1]);
 
-            point->NInverseEffectiveMass = inverseMass + dot(point->R1xN, inverseInertia1 * point->R1xN) +
+            point->NEffectiveMass = inverseMass + dot(point->R1xN, inverseInertia1 * point->R1xN) +
                                            dot(point->R2xN, inverseInertia2 * point->R2xN);
-            point->TInverseEffectiveMass[0] = inverseMass + dot(point->R1xT[0], inverseInertia1 * point->R1xT[0]) +
+            point->TEffectiveMass[0] = inverseMass + dot(point->R1xT[0], inverseInertia1 * point->R1xT[0]) +
                                               dot(point->R2xT[0], inverseInertia2 * point->R2xT[0]);
-            point->TInverseEffectiveMass[1] = inverseMass + dot(point->R1xT[1], inverseInertia1 * point->R1xT[1]) +
+            point->TEffectiveMass[1] = inverseMass + dot(point->R1xT[1], inverseInertia1 * point->R1xT[1]) +
                                               dot(point->R2xT[1], inverseInertia2 * point->R2xT[1]);
 
             RigidBody *body1 = &bodies[mid->Body1];
             RigidBody *body2 = &bodies[mid->Body2];
 
+            float vn = dot(GetRelativeVelocity(body1, body2, point), manifold->Normal);
             point->Bias =
                 (max(0.0f, point->Penetration - settings.PenetrationSlop) * settings.StabilizationTerm * inverseDt) +
                 (manifold->Restitution *
-                 glm::max(dot(GetRelativeVelocity(body1, body2, point), manifold->Normal) - settings.RestitutionSlop,
-                          0.0f));
+                 glm::max(-vn - settings.RestitutionSlop, 0.0f));
 
             // Find and apply cached impulses
             FullContactId fid;
@@ -97,11 +97,12 @@ void SolveManifolds(RigidBody *bodies, WorldContactSet *contactSet, Real inverse
             ContactPoint *point = &manifold->Points[pointIdx];
 
             // tangents
+            float scaledMaxFrictionForce = manifold->FrictionCoef * point->NImpulse;
             for (int i = 0; i < 2; ++i) {
                 Real tangent1Speed = dot(GetRelativeVelocity(body1, body2, point), manifold->Tangents[i]);
-                Real tDeltaLambda = -tangent1Speed / point->TInverseEffectiveMass[i];
+                Real tDeltaLambda = -tangent1Speed / point->TEffectiveMass[i];
                 Real tLambda = point->TImpulse[i];
-                point->TImpulse[i] = clamp(tLambda + tDeltaLambda, -manifold->FrictionCoef, manifold->FrictionCoef);
+                point->TImpulse[i] = clamp(tLambda + tDeltaLambda, -scaledMaxFrictionForce, scaledMaxFrictionForce);
                 tDeltaLambda = point->TImpulse[i] - tLambda;
 
                 Vec3 deltaT = tDeltaLambda * manifold->Tangents[i];
@@ -117,7 +118,7 @@ void SolveManifolds(RigidBody *bodies, WorldContactSet *contactSet, Real inverse
             Real separatingSpeed = dot(GetRelativeVelocity(body1, body2, point), manifold->Normal);
 
             Real constraint = -separatingSpeed + point->Bias;
-            Real deltaLambda = constraint / point->NInverseEffectiveMass;
+            Real deltaLambda = constraint / point->NEffectiveMass;
             Real lambda = point->NImpulse;
             point->NImpulse = max(point->NImpulse + deltaLambda, 0.0f);
             deltaLambda = point->NImpulse - lambda;
