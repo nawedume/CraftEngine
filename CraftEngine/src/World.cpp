@@ -350,4 +350,11 @@ JointId AddRevoluteJoint(World *world, BodyId b1, BodyId b2, Vec3 globalAnchor) 
     world->AnchorJoints.push_back(outJoint);
     return id;
 }
+
+// temporary solution to add static objects, will update to have proper support later
+void SetStatic(World* world, BodyId bodyId) {
+    world->RigidBodiesBase[bodyId].InverseInertiaLocal = Mat3 { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+    world->RigidBodies[bodyId].InverseMass = 0.0;
+    world->RigidBodies[bodyId].InverseInertia = Mat3 { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+}
 } // namespace ce

@@ -1,10 +1,13 @@
 #include "Core.h"
+#include "Math.hpp"
 #include "World.h"
 #include "camera.hpp"
 #include "glad.h"
 #include "shader.hpp"
 #include "GLFW/glfw3.h"
 #include <unordered_map>
+#include <vector>
+#include "mesh.h"
 
 namespace ceeditor {
     using namespace ce;
@@ -14,7 +17,17 @@ namespace ceeditor {
     // which should use the same shader, and ideally be held in the same buffer.
     // Or drawing all AABBs, etc
     struct DrawContext {
+        ce::BodyId Body;
         GLuint MeshDataVao;
+        u32 Size;
+        Vec3 BaseColor;
+    };
+
+    struct InstancedDrawContext {
+        ce::BodyId StartBody;
+        ce::BodyId EndBody;
+        GLuint MeshDataVao;
+        GLuint MeshTransformVbo;
         u32 Size;
         Vec3 BaseColor;
     };
@@ -29,19 +42,26 @@ namespace ceeditor {
         Move
     };
 
+    struct RenderSettings {
+        Vec3 LightDir = normalize(Vec3(1.0, 1.0, 1.0));
+        float AmbientIntensity = 0.3;
+    };
+
     struct Editor {
         World* World;
+        RenderSettings RenderSettings {};
         float DeltaTime = 1.0 / 60.0;
         bool IsSimulating = false;
 
         Editor(GLFWwindow* window);
-        BodyId AddBox(BoxDef def, Transform t);
-        BodyId AddConvex(ConvexHullDef def, Transform t);
+
+        BodyId AddBox(BoxDef def, Transform t, Vec3 color = Vec3(1.0, 0.0, 0.0));
+        BodyId AddConvex(ConvexHullDef def, Transform t, Vec3 color);
+        BodyId AddCapsule(CapsuleDef def, Transform t, Vec3 color);
+        BodyId AddBall(SphereDef def, Transform t, Vec3 color);
+
         void DrawWorld();
         void DrawBoundingBoxes();
-        void SetColor(BodyId bid, Vec3 color) {
-            BodyToDrawCtx.at(bid).BaseColor = color;
-        }
         BodyId RayCast(Ray ray);
         void HandleInput();
 
@@ -55,20 +75,26 @@ namespace ceeditor {
         EditorMode Mode;
 
         private:
-        std::unordered_map<BodyId, DrawContext> BodyToDrawCtx;
         Shader* SolidShader;
         Camera* ViewCamera;
         Mat4 ProjMat;
         GLFWwindow* Window;
 
+        std::vector<DrawContext> FlatElements;
+        std::vector<DrawContext> IndexedElements;
+        std::vector<InstancedDrawContext> InstancedFlatElements;
+
         Vec2 OldCursorPos = { 0.0, 0.0 };
         DrawContext GridDrawContext;
         Shader* GridShader;
 
-        void DrawBox(DrawContext& context);
-        void DrawHull(DrawContext& context);
-        void DrawObject(BodyId bid, DrawContext& context);
-        void AddConvexHullMesh(BodyId bodyId, ConvexHull* hull);
+        void DrawIndexedElements();
+        void DrawFlatElements();
+        void DrawInstancedFlatElements();
+        void DrawDebugBoundingBoxes();
+        void BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3 baseColor);
+
+        void AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color);
         void HandleCameraMoveMotion();
         void DrawGrid();
     };

@@ -12,7 +12,6 @@ uniform mat4 uProjTransform;
 out vec3 vPos;
 out vec3 vNormal;
 out vec3 vBarycentricCoord;
-flat out uvec3 vEdgeMask;
 
 void main() {
     vec4 worldPos = uWorldTransform * vec4(inPos, 1.0);
@@ -23,5 +22,4 @@ void main() {
     vNormal = mat3(uWorldTransform) * inNormal;
 
     vBarycentricCoord = inBarycentricCoord;
-    vEdgeMask = inEdgeMask;
 }

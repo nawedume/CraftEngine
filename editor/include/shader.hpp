@@ -14,7 +14,7 @@ class Shader
 
 public:
     unsigned int ID; // program ID
-    
+
     Shader(const char* vertexPath, const char* fragmentPath)
     {
         std::string vertexCode;
@@ -24,7 +24,7 @@ public:
 
         vShaderFile.exceptions( std::ifstream::failbit | std::ifstream::badbit );
         vFragmentFile.exceptions( std::ifstream::failbit | std::ifstream::badbit );
-        
+
         try
         {
             // open files
@@ -46,7 +46,7 @@ public:
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ" << std::endl;
             exit(1);
         }
-        
+
         const char* vShaderCode = vertexCode.c_str();
         const char* fShaderCode = fragmentCode.c_str();
 

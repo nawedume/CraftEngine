@@ -1,3 +1,4 @@
+#include "Core.h"
 #include "Math.hpp"
 #include "camera.hpp"
 #include "editor.h"
@@ -101,7 +102,7 @@ Editor::Editor(GLFWwindow* window): Window(window) {
     GridShader = new Shader("../editor/shaders/grid_vs_shader.glsl", "../editor/shaders/grid_fs_shader.glsl");
 }
 
-void Editor::AddConvexHullMesh(BodyId bodyId, ConvexHull* hull) {
+void Editor::AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color) {
     // @todo replace with arena allocator
     u32 indices[MAX_NUM_INDICES];
     // Multiply by 2 to account for normals per vertex
@@ -198,34 +199,87 @@ void Editor::AddConvexHullMesh(BodyId bodyId, ConvexHull* hull) {
 
 
     DrawContext context = {
+        .Body = bodyId,
         .MeshDataVao=vao,
         .Size=numIndices,
-        .BaseColor=Vec3(1.0, 1.0, 1.0),
+        .BaseColor=color,
     };
 
-    this->BodyToDrawCtx.insert({bodyId, context});
+    this->IndexedElements.push_back(context);
 }
 
-BodyId Editor::AddConvex(ConvexHullDef def, Transform t) {
+BodyId Editor::AddConvex(ConvexHullDef def, Transform t, Vec3 color) {
     BodyId bodyId = AddConvexHull(this->World, t, def);
-    AddConvexHullMesh(bodyId, def.Hull);
+    AddConvexHullMesh(bodyId, def.Hull, color);
     return bodyId;
 }
 
-BodyId Editor::AddBox(BoxDef def, Transform t) {
+BodyId Editor::AddBox(BoxDef def, Transform t, Vec3 color) {
     BodyId bodyId = ce::AddBox(this->World, t, def);
-    AddConvexHullMesh(bodyId, this->World->Colliders[bodyId].Hull.Hull);
+    GraphicBuffers buffer = createBoxMesh(def.HalfEdge.x, def.HalfEdge.y, def.HalfEdge.z);
+    BuffersToDrawContext(bodyId, buffer, color);
     return bodyId;
 }
 
-void Editor::DrawObject(BodyId bid, DrawContext& context) {
-    Mat4 m = this->World->Transforms[bid].Matrix();
+BodyId Editor::AddCapsule(CapsuleDef def, Transform t, Vec3 color) {
+    BodyId bodyId = ce::AddCapsule(this->World, t, def);
+    GraphicBuffers buffer = createCapsuleMesh(def.Radius, def.HalfLength, def.Radius * 10, def.Radius * 10);
+    BuffersToDrawContext(bodyId, buffer, Vec3(0.0, 0.3, 0.5));
+    return bodyId;
+}
 
-    SolidShader->setFloatMat4("uWorldTransform", (float*) glm::value_ptr(m));
-    SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
+BodyId Editor::AddBall(SphereDef def, Transform t, Vec3 color) {
+    BodyId bodyId = ce::AddSphere(this->World, t, def);
+    GraphicBuffers buffer = createSphereMesh(def.Radius, def.Radius * 10, def.Radius * 10);
+    BuffersToDrawContext(bodyId, buffer, Vec3(0.1, 0.3, 0.7));
+    return bodyId;
+}
 
-    glBindVertexArray(context.MeshDataVao);
-    glDrawElements(GL_TRIANGLES, context.Size, GL_UNSIGNED_INT, nullptr);
+void Editor::BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3 baseColor)  {
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, buffer.NumVertices * sizeof(float) * 8, buffer.VertexBuffer, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*) 0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*) (sizeof(float) * 3));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*) (sizeof(float) * 6));
+
+    if (buffer.NumIndices != 0) {
+        GLuint ebo;
+        glGenBuffers(1, &ebo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer.NumIndices, buffer.IndexBuffer, GL_STATIC_DRAW);
+
+        DrawContext context = {
+            .Body = bodyId,
+            .MeshDataVao=vao,
+            .Size=buffer.NumIndices,
+            .BaseColor=baseColor,
+        };
+
+        IndexedElements.push_back(context);
+
+    } else {
+        DrawContext context = {
+            .Body = bodyId,
+            .MeshDataVao=vao,
+            .Size=buffer.NumVertices,
+            .BaseColor=baseColor,
+        };
+
+        FlatElements.push_back(context);
+    }
+
+    free(buffer.VertexBuffer);
+    free(buffer.IndexBuffer);
 }
 
 void Editor::DrawWorld() {
@@ -236,19 +290,51 @@ void Editor::DrawWorld() {
     SolidShader->setVec3("uGlobalLightDir", (float*) glm::value_ptr(glm::vec3(1.0, 1.0, 1.0)));
     SolidShader->setFloatMat4("uCameraTransform", glm::value_ptr(cameraMat));
     SolidShader->setFloatMat4("uProjTransform", glm::value_ptr(ProjMat));
-    for (int i = 0; i < this->World->NumBodies(); ++i) {
-        DrawContext& context = this->BodyToDrawCtx.at(i);
-        DrawObject(i, context);
+    SolidShader->setVec3s("uLightDir", 1, glm::value_ptr(RenderSettings.LightDir));
+    SolidShader->setFloat("uAmbient", RenderSettings.AmbientIntensity);
+
+    DrawFlatElements();
+    DrawIndexedElements();
+
+    // @todo Add a instanced shader here that can fetch from the buffer
+    // DrawInstancedFlatElements();
+}
+
+void Editor::DrawFlatElements() {
+    for (auto& context : FlatElements) {
+        Mat4 m = this->World->Transforms[context.Body].Matrix();
+
+        SolidShader->setFloatMat4("uWorldTransform", (float*) glm::value_ptr(m));
+        SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
+
+        glBindVertexArray(context.MeshDataVao);
+        glDrawArrays(GL_TRIANGLES, 0, context.Size);
     }
 }
 
-void Editor::DrawBoundingBoxes() {
+void Editor::DrawIndexedElements() {
+    for (auto& context : IndexedElements) {
+        Mat4 m = this->World->Transforms[context.Body].Matrix();
 
+        SolidShader->setFloatMat4("uWorldTransform", (float*) glm::value_ptr(m));
+        SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
+
+        glBindVertexArray(context.MeshDataVao);
+        glDrawElements(GL_TRIANGLES, context.Size, GL_UNSIGNED_INT, nullptr);
+    }
 }
 
-BodyId Editor::RayCast(Ray ray) {
+void Editor::DrawInstancedFlatElements() {
+    for (auto& context : InstancedFlatElements) {
+        Mat4 m = this->World->Transforms[context.StartBody].Matrix();
 
-    return -1;
+        SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
+
+        // Set the the transform array here to use, need a new shader as well
+
+        glBindVertexArray(context.MeshDataVao);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, context.Size, context.EndBody - context.StartBody + 1);
+    }
 }
 
 void Editor::HandleCameraMoveMotion() {

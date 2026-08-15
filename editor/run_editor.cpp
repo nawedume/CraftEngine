@@ -23,7 +23,10 @@ GLFWwindow* initGlfw() {
 
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
-    GLFWwindow *window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Editor", nullptr, nullptr);
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Editor", monitor, nullptr);
     if (window == nullptr) {
         fprintf(stderr, "Could not create GLFW window\n");
         exit(1);
@@ -49,6 +52,7 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
 
+
     Editor editor(window);
 
     BoxDef boxDef = {
@@ -57,17 +61,31 @@ int main() {
     };
 
     for (int i = 0; i < 10; ++i) {
-        BodyId box = editor.AddBox(boxDef, Transform { .Pos = (float) i * Vec3(0.0, 2, 0.0) });
-        editor.SetColor(box, Vec3(1.0, 0.412, 0.38));
+        BodyId box = editor.AddBox(boxDef,
+            Transform{.Pos = {0.0f, 2.0f + (i * 2.1), 0.0f}}
+        );
     }
+
+    BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.1, 0.1, 0.1 });
+    SetStatic(editor.World, floor);
 
     // editor.World->GravityAcc.y = 0.0;
 
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
+
+
         ImGui::NewFrame();
+
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        float paneWidth = 300.0;
+        ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + viewport->WorkSize.x  - paneWidth, viewport->WorkPos.y));
+        ImGui::SetNextWindowSize(ImVec2(paneWidth, viewport->WorkSize.y));
+
+        ImGui::Begin("Editor");
         ImGui::Text("Craft Engine pane");
+        ImGui::End();
 
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

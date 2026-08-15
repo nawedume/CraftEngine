@@ -342,4 +342,6 @@ namespace ce {
     typedef u32 JointId;
 
     JointId AddRevoluteJoint(World* world, BodyId b1, BodyId b2, Vec3 globalAnchor);
+
+    void SetStatic(World* world, BodyId bodyId);
 };

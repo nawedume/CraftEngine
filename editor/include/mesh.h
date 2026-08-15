@@ -1,8 +1,12 @@
+#ifndef MESH_H
+#define MESH_H
+
 #include <malloc/_malloc_type.h>
 #include <stdio.h>
 #include <cmath>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
+#include <string.h>
 
 const float BoxMesh[]{
     // positions // normals // texture coords
@@ -26,8 +30,13 @@ const float BoxMesh[]{
     1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f, 1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
     -1.0f, 1.0f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f, -1.0f, 1.0f,  -1.0f, 0.0f,  1.0f,  0.0f,  0.0f, 1.0f};
 
+struct GraphicBuffers {
+    float *VertexBuffer;
+    unsigned int NumVertices;
+    unsigned int *IndexBuffer;
+    unsigned int NumIndices;
+};
 
-/**
 inline GraphicBuffers createSphereMesh(float radius, unsigned int numLat, unsigned int numLong) {
     float latAngleStep = M_PI / (numLat + 1);
     float longAngleStep = (2.0f * M_PI) / numLong;
@@ -273,4 +282,20 @@ inline GraphicBuffers createArrowMesh(float headWidth, float lineWidth, float le
             .NumIndices = 66 };
 }
 
-*/
+inline GraphicBuffers createBoxMesh(float w, float l, float h) {
+    float* boxMesh =  new float[36 * 8];
+    memcpy(boxMesh, BoxMesh, sizeof(float) * 36 * 8);
+    for (int i = 0; i < 36 * 8; i += 8) {
+        boxMesh[i] = BoxMesh[i] * w;
+        boxMesh[i + 1] = BoxMesh[i + 1] * l;
+        boxMesh[i + 2] = BoxMesh[i + 2] * h;
+    }
+    return {
+        .VertexBuffer = boxMesh,
+        .NumVertices = 36,
+        .IndexBuffer = nullptr,
+        .NumIndices = 0
+    };
+}
+
+#endif
