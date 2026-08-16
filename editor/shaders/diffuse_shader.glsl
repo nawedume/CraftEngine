@@ -11,7 +11,7 @@ uniform float uAmbient;
 out vec4 fColor;
 
 void main() {
-    float intensity = max(0.0, dot(vNormal, uLightDir));
+    float intensity = max(0.0, dot(vNormal, uLightDir) * 0.5);
     intensity = min(intensity + uAmbient, 1.0);
     fColor = vec4(uBaseColor * intensity, 1.0);
 }

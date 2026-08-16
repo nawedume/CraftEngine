@@ -1,5 +1,7 @@
+#include <ratio>
 #include <stdio.h>
 #include <stdlib.h>
+#include <chrono>
 #include "World.h"
 #include "glad.h"
 #include "GLFW/glfw3.h"
@@ -71,6 +73,8 @@ int main() {
 
     // editor.World->GravityAcc.y = 0.0;
 
+
+
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -85,14 +89,18 @@ int main() {
 
         ImGui::Begin("Editor");
         ImGui::Text("Craft Engine pane");
-        ImGui::End();
 
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         if (editor.IsSimulating) {
+            auto start = std::chrono::steady_clock::now();
             Step(editor.World, editor.DeltaTime);
+            std::chrono::duration<double, std::milli> duration = std::chrono::steady_clock::now() - start;
+            ImGui::Text("Physics (ms): %f", duration.count());
         }
+
+        ImGui::End();
 
         editor.HandleInput();
         editor.DrawWorld();
