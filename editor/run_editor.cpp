@@ -68,13 +68,14 @@ int main() {
         );
     }
 
-    BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.1, 0.1, 0.1 });
+    BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.8, 0.8, 0.8 });
     SetStatic(editor.World, floor);
 
     // editor.World->GravityAcc.y = 0.0;
 
 
 
+    printf("World interations: %d, %d\n", editor.World->Settings.NumOfSolverIterations, editor.World->Settings.NumOfRelaxationIterations);
     while (!glfwWindowShouldClose(window)) {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();

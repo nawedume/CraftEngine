@@ -3,6 +3,7 @@
 #include "Core.h"
 #include <unordered_map>
 #include <vector>
+#include "Timers.h"
 
 namespace ce {
     Vec3 const X_AXIS = Vec3(1.0f, 0.0f, 0.0f);
@@ -132,8 +133,8 @@ namespace ce {
         Real PenetrationSlop = 0.05;
         Real StabilizationTerm = 0.1;
         Real RestitutionSlop = 0.05;
-        Real NumOfSolverIterations = 5;
-        Real NumOfRelaxationIterations = 5;
+        int NumOfSolverIterations = 5;
+        int NumOfRelaxationIterations = 5;
     };
 
     struct BodyPair {
@@ -172,6 +173,9 @@ namespace ce {
         WorldContactSet* ContactSet;
 
         ImpulseStore StoredImpulses;
+
+        // profiling
+        TimerManager TimerManager;
 
         Vec3 GravityAcc { 0.0f, -9.81f, 0.0f };
 

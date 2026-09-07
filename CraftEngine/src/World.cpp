@@ -7,6 +7,7 @@
 #include "Math.hpp"
 #include "Solver.h"
 #include "Box.h"
+#include "Timers.h"
 
 namespace ce {
 Mat4 Transform::Matrix() {
@@ -127,8 +128,6 @@ void Step(World *world, Real deltaTime) {
     Real inverseDeltaTime = 1.0f / deltaTime;
 
     for (u32 i = 0; i < world->NumBodies(); ++i) {
-        // Is used for contact detection to determine the objects axes
-        // might not be necessary, maybe should remove and make it lazy
         Transform &transform = world->Transforms[i];
         RigidBody &body = world->RigidBodies[i];
         Mat3 localInverseInertia = world->RigidBodiesBase[i].InverseInertiaLocal;
@@ -139,13 +138,16 @@ void Step(World *world, Real deltaTime) {
         body.InverseInertia = globalInverseInertia;
     }
 
-    BruteForceBroadPhaseSIMD(world);
+    auto bpTimer = world->TimerManager.NewTimer("BroadPhase");
+    BruteForceBroadPhase(world);
+    world->TimerManager.LogTime(bpTimer);
 
     IntegrateVelocities(world, deltaTime);
 
     world->ContactSet->Clear();
     DetectContacts(world, world->BroadPhaseBodies);
 
+    auto solverTimer = world->TimerManager.NewTimer("SolverTimer");
     // Solve contacts
     PrepManifolds(world->ContactSet, world->RigidBodies.data(), world->Materials.data(), &world->StoredImpulses,
                   inverseDeltaTime, world->Settings);
@@ -155,6 +157,7 @@ void Step(World *world, Real deltaTime) {
         SolveManifolds(world->RigidBodies.data(), world->ContactSet, inverseDeltaTime);
         SolveJoints(world, inverseDeltaTime);
     }
+    world->TimerManager.LogTime(solverTimer);
 
     IntegratePositions(world, deltaTime);
     PostPoseUpdate(world);

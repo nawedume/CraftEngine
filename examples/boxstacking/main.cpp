@@ -110,5 +110,7 @@ int main() {
         }
     }
 
+    world->TimerManager.CalculationAndPrint();
+
     return 0;
 }

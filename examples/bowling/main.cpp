@@ -51,11 +51,28 @@ int main() {
     ce::BodyId capsule = CreateCapsule(
         gobjects, world, ce::Transform { .Pos = { 0.0f, 20.0f, -20.0f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
     );
+    world->Materials[capsule].Friction = 0.2;
 
-    ce::BodyId pin = CreateCapsule(
+    ce::BodyId pin0 = CreateCapsule(
         gobjects, world, ce::Transform { .Pos = { 00.0f, 3.0f, 0.0f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
     );
-    printf("The Pin is %d\n", pin);
+    ce::BodyId pin1 = CreateCapsule(
+        gobjects, world, ce::Transform { .Pos = { 1.0f, 3.0f, 2.1f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
+    );
+    ce::BodyId pin2 = CreateCapsule(
+        gobjects, world, ce::Transform { .Pos = { -1.0f, 3.0f, 2.1f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
+    );
+    ce::BodyId pin3 = CreateCapsule(
+        gobjects, world, ce::Transform { .Pos = { -2.0f, 3.0f, 4.2f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
+    );
+    ce::BodyId pin4 = CreateCapsule(
+        gobjects, world, ce::Transform { .Pos = { 0.0f, 3.0f, 4.2f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
+    );
+    ce::BodyId pin5 = CreateCapsule(
+        gobjects, world, ce::Transform { .Pos = { 2.0f, 3.0f, 4.2f } }, &capsuleDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
+    );
+
+    // printf("The Pin is %d\n", pin);
     // ce::BodyId pin = CreateBall(
     //     gobjects, world, ce::Transform { .Pos = { 00.0f, 0.0f, 0.0f } }, &ballDef, 10, ce::Vec3(0.7f, 0.0f, 0.0f)
     // );
