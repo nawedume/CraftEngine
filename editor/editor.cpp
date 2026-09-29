@@ -411,4 +411,10 @@ void Editor::UpdateCameraMovementSpeed(float speedIncrement) {
     newSpeed = clamp(newSpeed, 1e-6, 1000.0);
     ViewCamera->MovementSpeed = newSpeed;
 }
+
+void Editor::Reset() {
+    delete World;
+    World = NewWorld();
+}
+
 }

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Core.h"
 #include "Math.hpp"
 #include "World.h"
@@ -46,7 +48,6 @@ namespace ceeditor {
         Vec3 LightDir = normalize(Vec3(1.0, 1.0, 1.0));
         float AmbientIntensity = 0.3;
     };
-
     struct Editor {
         World* World;
         RenderSettings RenderSettings {};
@@ -69,6 +70,7 @@ namespace ceeditor {
         void ToggleToSelectMode();
 
         void UpdateCameraMovementSpeed(float speedIncrement);
+        void Reset();
 
         // @todo
         // void DrawDebug();

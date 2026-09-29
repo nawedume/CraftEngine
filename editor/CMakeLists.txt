@@ -14,12 +14,13 @@ FILE(GLOB ImGuiSources
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_glfw.cpp
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/imgui_impl_opengl3.cpp
     ${CMAKE_SOURCE_DIR}/external/imgui/misc/cpp/imgui_stdlib.*
-    ${CMAKE_SOURCE_DIR}/external/glad.cpp
 )
 
 add_executable(Editor
     ${CMAKE_SOURCE_DIR}/editor/run_editor.cpp
     ${CMAKE_SOURCE_DIR}/editor/editor.cpp
+    ${CMAKE_SOURCE_DIR}/editor/examples/ex_aabb.cpp
+    ${CMAKE_SOURCE_DIR}/external/glad.c
     ${ImGuiSources}
 )
 
@@ -28,7 +29,9 @@ target_include_directories(Editor PRIVATE
     ${CMAKE_SOURCE_DIR}/CraftEngine/src/
     ${CMAKE_SOURCE_DIR}/external/imgui/
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/
+    ${CMAKE_SOURCE_DIR}/external/include/glad
     ${CMAKE_SOURCE_DIR}/editor/include/
+    ${CMAKE_SOURCE_DIR}/editor/include/examples
 )
 
 target_link_libraries(Editor PRIVATE

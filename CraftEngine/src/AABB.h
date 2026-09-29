@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Geometry.h"
 #include "Math.hpp"
 #include "World.h"

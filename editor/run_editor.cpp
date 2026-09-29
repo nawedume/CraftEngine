@@ -11,6 +11,8 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 
+#include "ex_aabb.h"
+
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
 
@@ -44,6 +46,14 @@ GLFWwindow* initGlfw() {
     return window;
 }
 
+enum Examples {
+    AABB,
+    JOINTS,
+    BOWLING,
+    BOX_STACKING,
+    GJK,
+};
+
 int main() {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -72,8 +82,7 @@ int main() {
     SetStatic(editor.World, floor);
 
     // editor.World->GravityAcc.y = 0.0;
-
-
+    int activeExample = -1;
 
     printf("World interations: %d, %d\n", editor.World->Settings.NumOfSolverIterations, editor.World->Settings.NumOfRelaxationIterations);
     while (!glfwWindowShouldClose(window)) {
@@ -89,7 +98,22 @@ int main() {
         ImGui::SetNextWindowSize(ImVec2(paneWidth, viewport->WorkSize.y));
 
         ImGui::Begin("Editor");
-        ImGui::Text("Craft Engine pane");
+
+        ImGui::Text("Examples");
+
+        if (ImGui::RadioButton("AABB", &activeExample, Examples::AABB)) {
+            editor.Reset();
+            ExAABBSetup(&editor);
+
+        } else if (ImGui::RadioButton("Joints", &activeExample, Examples::JOINTS)) {
+            editor.Reset();
+        } else if (ImGui::RadioButton("Bowling", &activeExample, Examples::BOWLING)) {
+            editor.Reset();
+        } else if (ImGui::RadioButton("Box Stacking", &activeExample, Examples::BOX_STACKING)) {
+            editor.Reset();
+        } else if (ImGui::RadioButton("GJK", &activeExample, Examples::GJK)) {
+            editor.Reset();
+        }
 
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

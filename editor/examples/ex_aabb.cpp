@@ -5,12 +5,15 @@
 #include "World.h"
 #include "glm/gtc/constants.hpp"
 #include "glm/gtc/quaternion.hpp"
-#include "utils.hpp"
-#include "worldrender.hpp"
+// #include "utils.hpp"
+// #include "worldrender.hpp"
 #include <cstdio>
 #include <vector>
+#include "editor.h"
+#include "ex_aabb.h"
 
 void ControlBody(draw::GSystem *gsys, ce::BodyId bid1, ce::World *world, float deltaTime) {
+
     ce::Vec3 movement{0};
     GLFWwindow *window = gsys->mWindow;
     if (glfwGetKey(window, GLFW_KEY_UP))
@@ -45,6 +48,11 @@ void ControlBody(draw::GSystem *gsys, ce::BodyId bid1, ce::World *world, float d
         world->Transforms[bid1].Pos += deltaTime * movement;
     }
 }
+
+void ExAABBSetup(ceeditor::Editor* editor) {
+}
+
+/*
 int main() {
     draw::GSystem *gsys = draw::InitGSystem(1000, 1000, 0.0f, 0.0f, 10.0f);
     gsys->mLightDir = ce::Vec3(1.0, 1.0, 1.0);
@@ -124,3 +132,4 @@ int main() {
     }
     return 0;
 }
+*/
