@@ -29,7 +29,8 @@ target_include_directories(Editor PRIVATE
     ${CMAKE_SOURCE_DIR}/CraftEngine/src/
     ${CMAKE_SOURCE_DIR}/external/imgui/
     ${CMAKE_SOURCE_DIR}/external/imgui/backends/
-    ${CMAKE_SOURCE_DIR}/external/include/glad
+    ${CMAKE_SOURCE_DIR}/external/include/
+    ${CMAKE_SOURCE_DIR}/external/include/glad/
     ${CMAKE_SOURCE_DIR}/editor/include/
     ${CMAKE_SOURCE_DIR}/editor/include/examples
 )

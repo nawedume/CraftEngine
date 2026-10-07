@@ -110,10 +110,12 @@ namespace ceeditor {
         void AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color);
         void HandleCameraMoveMotion();
         void DrawGrid();
+        void CleanupGL();
 
         // Debug stuff
         bool DebugIsDirty = false;
         Shader* DebugLineShader;
         DebugAABBDrawContext DebugAABBContext; // holds all lines for all objects.
+        void ReInitDebug();
     };
 }

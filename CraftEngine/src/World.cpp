@@ -105,6 +105,19 @@ void IntegratePositions(World *world, Real deltaTime) {
     }
 }
 
+void PreBodyUpdate(World* world) {
+    for (u32 i = 0; i < world->NumBodies(); ++i) {
+        Transform &transform = world->Transforms[i];
+        RigidBody &body = world->RigidBodies[i];
+        Mat3 localInverseInertia = world->RigidBodiesBase[i].InverseInertiaLocal;
+
+        // Update the global inertia vector using the current orientation
+        Mat3 rotation = qToMat(transform.Orientation);
+        Mat3 globalInverseInertia = rotation * localInverseInertia * transpose(rotation);
+        body.InverseInertia = globalInverseInertia;
+    }
+}
+
 void PostPoseUpdate(World *world) {
     for (int i = 0; i < world->NumBodies(); ++i) {
         Collider *collider = &world->Colliders[i];
@@ -124,19 +137,10 @@ void PostPoseUpdate(World *world) {
     }
 }
 
+
 void Step(World *world, Real deltaTime) {
     Real inverseDeltaTime = 1.0f / deltaTime;
-
-    for (u32 i = 0; i < world->NumBodies(); ++i) {
-        Transform &transform = world->Transforms[i];
-        RigidBody &body = world->RigidBodies[i];
-        Mat3 localInverseInertia = world->RigidBodiesBase[i].InverseInertiaLocal;
-
-        // Update the global inertia vector using the current orientation
-        Mat3 rotation = qToMat(transform.Orientation);
-        Mat3 globalInverseInertia = rotation * localInverseInertia * transpose(rotation);
-        body.InverseInertia = globalInverseInertia;
-    }
+    PreBodyUpdate(world);
 
     auto bpTimer = world->TimerManager.NewTimer("BroadPhase");
     BruteForceBroadPhase(world);
@@ -221,9 +225,8 @@ BodyId AddSphere(World *world, Transform &transform, SphereDef &def) {
 
     Collider collider{.Id = ColliderId::SPHERE, .Sphere = {.Radius = def.Radius}};
     // @todo, replace when adding separate transform for shape offset
-    Transform t{};
     return AddBody(world, transform, {.InverseInertiaLocal = inverseInertia}, body, collider,
-                   CalculateTightFittingAABBForSphere(&collider.Sphere, &t));
+                   CalculateTightFittingAABBForSphere(&collider.Sphere, &transform));
 }
 
 BodyId AddHollowSphere(World *world, Transform &transform, SphereDef &def) {
@@ -237,9 +240,8 @@ BodyId AddHollowSphere(World *world, Transform &transform, SphereDef &def) {
     };
 
     Collider collider{.Id = ColliderId::SPHERE, .Sphere = {.Radius = def.Radius}};
-    Transform t{};
     return AddBody(world, transform, {.InverseInertiaLocal = inverseInertia}, body, collider,
-                   CalculateTightFittingAABBForSphere(&collider.Sphere, &t));
+                   CalculateTightFittingAABBForSphere(&collider.Sphere, &transform));
 }
 
 BodyId AddCapsule(World *world, Transform &transform, CapsuleDef &def) {
@@ -278,9 +280,8 @@ BodyId AddCapsule(World *world, Transform &transform, CapsuleDef &def) {
 
     RigidBody body{.LinearVelocity = Vec3(0.0f), .AngularVelocity = Vec3(0.0f), .InverseMass = inverseMass};
     Collider collider{.Id = ColliderId::CAPSULE, .Capsule = {.Radius = def.Radius, .HalfLength = def.HalfLength}};
-    Transform t{};
     return AddBody(world, transform, {.InverseInertiaLocal = inverseInertia}, body, collider,
-                   CalculateTightFittingAABBForCapsule(&collider.Capsule, &t));
+                   CalculateTightFittingAABBForCapsule(&collider.Capsule, &transform));
 }
 
 void ApplyLinearForce(World *world, u32 idx, Vec3 force) { world->ForceAccumulators[idx].LinearForce += force; }

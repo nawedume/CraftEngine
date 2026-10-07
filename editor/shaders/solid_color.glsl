@@ -1,6 +1,6 @@
 #version 330 core
 
-vec4 fColor;
+out vec4 fColor;
 
 uniform vec3 uColor;
 

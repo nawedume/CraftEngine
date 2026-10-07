@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
+#include "camera.hpp"
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
@@ -19,6 +20,20 @@
 
 using namespace ceeditor;
 
+void APIENTRY glDebugOutput(
+    GLenum source,
+    GLenum type,
+    GLuint id,
+    GLenum severity,
+    GLsizei length,
+    const GLchar* message,
+    const void* userParam)
+{
+    std::cerr
+        << "OpenGL Debug [" << id << "]: "
+        << message << "\n";
+}
+
 GLFWwindow* initGlfw() {
     glfwInit();
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -31,7 +46,8 @@ GLFWwindow* initGlfw() {
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Editor", monitor, nullptr);
+    // GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Editor", monitor, nullptr);
+    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, "Editor", nullptr, nullptr);
     if (window == nullptr) {
         fprintf(stderr, "Could not create GLFW window\n");
         exit(1);
@@ -84,8 +100,9 @@ int main() {
 
     // editor.World->GravityAcc.y = 0.0;
 
-    // editor.InitDebug();
+    editor.InitDebug();
     int activeExample = -1;
+    bool debug_EnableAABB = false;
 
     printf("World interations: %d, %d\n", editor.World->Settings.NumOfSolverIterations, editor.World->Settings.NumOfRelaxationIterations);
     while (!glfwWindowShouldClose(window)) {
@@ -115,12 +132,7 @@ int main() {
         }
 
         ImGui::Text("Debug");
-        bool debug_EnableAABB = false;
-        if (ImGui::Checkbox("Enable AABB", &debug_EnableAABB)) {
-            if (debug_EnableAABB) {
-                // editor.DrawBoundingBoxes();
-            }
-        }
+        ImGui::Checkbox("Enable AABB", &debug_EnableAABB);
 
         glEnable(GL_DEPTH_TEST);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -136,6 +148,9 @@ int main() {
 
         editor.HandleInput();
         editor.DrawWorld();
+        if (debug_EnableAABB) {
+            editor.DrawBoundingBoxes();
+        }
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -1,8 +1,8 @@
 #version 330 core
 
-in vec3 vPos;
-in vec3 iPos;
-in vec3 iExtent;
+layout (location = 0) in vec3 vPos;
+layout (location = 1) in vec3 iPos;
+layout (location = 2) in vec3 iExtent;
 
 uniform mat4 uWorldTransform;
 uniform mat4 uCameraTransform;

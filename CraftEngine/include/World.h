@@ -151,6 +151,10 @@ namespace ce {
         Vec3 Impulse { 0.0, 0.0, 0.0 };
     };
 
+    struct BodyFlags {
+        u32 IsKinematic: 1;
+    };
+
     struct World {
         u8 WorldId;
 

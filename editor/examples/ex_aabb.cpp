@@ -52,12 +52,10 @@ void ExAABBSetup(ceeditor::Editor* editor) {
         ce::Vec3(1.0, 0.0, 0.0));
 
     ce::World* world = editor->World;
-    editor->World->Transforms[boxId].Pos.x -= 0.1f;
+    // editor->World->Transforms[boxId].Pos.x -= 0.1f;
 
     ce::CapsuleDef capsuleDef = ce::CapsuleDef{.Mass = 1.0f, .Radius = 1.0f, .HalfLength = 1.0f};
-    ce::BodyId capsuleId = editor->AddCapsule(capsuleDef, ce::Transform{.Pos = {-2.0, 0.0, 0.0}}, ce::Vec3(0.3, 0.5, 0.3));
-
-    // editor->DrawBoundingBoxes();
+    ce::BodyId capsuleId = editor->AddCapsule(capsuleDef, ce::Transform{.Pos = {-3.0, 0.0, 0.0}}, ce::Vec3(0.3, 0.5, 0.3));
 }
 
 /*

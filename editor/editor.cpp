@@ -6,6 +6,7 @@
 #include "AABB.h"
 #include "glm/detail/type_vec.hpp"
 #include "shader.hpp"
+#include <OpenGL/gl.h>
 #include <cassert>
 #include <glad.h>
 #include "mesh.h"
@@ -301,8 +302,17 @@ void Editor::DrawWorld() {
     SolidShader->setVec3s("uLightDir", 1, glm::value_ptr(RenderSettings.LightDir));
     SolidShader->setFloat("uAmbient", RenderSettings.AmbientIntensity);
 
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Other Error is 0x%x\n", err);
+    }
+
     DrawFlatElements();
     DrawIndexedElements();
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Other After Error is 0x%x\n", err);
+    }
 
     // @todo Add a instanced shader here that can fetch from the buffer
     // DrawInstancedFlatElements();
@@ -328,7 +338,6 @@ void Editor::DrawIndexedElements() {
         SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
 
         glBindVertexArray(context.MeshDataVao);
-        printf("Num indices %d\n", context.Size);
         glDrawElements(GL_TRIANGLES, context.Size, GL_UNSIGNED_INT, nullptr);
     }
 }
@@ -436,19 +445,23 @@ void Editor::DrawBoundingBoxes() {
     drawSize.resize(n);
 
     for (int i = 0; i < n; ++i) {
-        auto aabb = World->AABBs[i];
+        auto& t = World->Transforms[i];
+        auto& aabb = World->AABBs[i];
         drawTrans[i] = aabb.Center;
         drawSize[i] = aabb.HalfEdge;
     }
 
     glBindVertexArray(DebugAABBContext.LineDataVao);
+    if (DebugIsDirty) {
+        ReInitDebug();
+        DebugIsDirty = false;
+    } else {
+        glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshSizeVbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedSizeScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data());
 
-    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshSizeVbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedSizeScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data());
-
-    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshTransformVbo);
-    glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedTransformsScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data());
-
+        glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshTransformVbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedTransformsScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data());
+    }
 
     DebugLineShader->use();
     Mat4 cameraMat = this->ViewCamera->GetViewMatrix();
@@ -456,7 +469,17 @@ void Editor::DrawBoundingBoxes() {
     DebugLineShader->setFloatMat4("uProjTransform", glm::value_ptr(ProjMat));
     DebugLineShader->setVec3("uColor", (float*) glm::value_ptr(DebugAABBContext.Color));
 
-    glDrawArraysInstanced(GL_LINES, 0, 12, n);
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Pre Error is 0x%x\n", err);
+    }
+
+    // @alert should be 24 I think
+    glDrawArraysInstanced(GL_LINES, 0, 24, n);
+
+    while ((err = glGetError()) != GL_NO_ERROR) {
+        printf("Post Error is 0x%x\n", err);
+    }
 }
 
 void Editor::InitDebug() {
@@ -496,27 +519,46 @@ void Editor::InitDebug() {
         .InstanceCount = World->NumBodies(),
         .Color = ce::Vec3(0.6588235294, 0.3960784314, 0.7098039216),
     };
-    DebugAABBContext.InstancedTransformsScratch.reserve(DebugAABBContext.InstanceCount);
-    DebugAABBContext.InstancedSizeScratch.reserve(DebugAABBContext.InstanceCount);
 
-    GLuint instancedTransformVbo;
-    glGenBuffers(1, &instancedTransformVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, instancedTransformVbo);
-    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data(), GL_DYNAMIC_DRAW);
+    glGenBuffers(1, &DebugAABBContext.MeshTransformVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshTransformVbo);
 
     // One for position the other for orientation
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(ce::Real), (void*) 0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ce::Vec3), (void*) 0);
     glVertexAttribDivisor(1, 1);
 
-    GLuint instancedSizeVbo;
-    glGenBuffers(1, &instancedSizeVbo);
-    glBindBuffer(GL_ARRAY_BUFFER, instancedSizeVbo);
-    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data(), GL_DYNAMIC_DRAW);
+    glGenBuffers(1, &DebugAABBContext.MeshSizeVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshSizeVbo);
 
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(ce::Real), (void*) 0);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(ce::Vec3), (void*) 0);
     glVertexAttribDivisor(2, 1);
+
+    DebugIsDirty = true;
+}
+
+void Editor::ReInitDebug() {
+    DebugAABBContext.InstanceCount = World->NumBodies();
+
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshTransformVbo);
+    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data(), GL_STATIC_DRAW);
+
+    // One for position the other for orientation
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(ce::Vec3), (void*) 0);
+    glVertexAttribDivisor(1, 1);
+
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshSizeVbo);
+    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(ce::Vec3), (void*) 0);
+    glVertexAttribDivisor(2, 1);
+}
+
+void Editor::CleanupGL() {
+
 }
 
 }
