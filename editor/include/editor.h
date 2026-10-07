@@ -4,10 +4,8 @@
 #include "Math.hpp"
 #include "World.h"
 #include "camera.hpp"
-#include "glad.h"
 #include "shader.hpp"
 #include "GLFW/glfw3.h"
-#include <unordered_map>
 #include <vector>
 #include "mesh.h"
 
@@ -30,8 +28,21 @@ namespace ceeditor {
         ce::BodyId EndBody;
         GLuint MeshDataVao;
         GLuint MeshTransformVbo;
+        std::vector<Transform> InstancedTransformsScratch;
         u32 Size;
+        u32 InstancedCount;
         Vec3 BaseColor;
+    };
+
+    struct DebugAABBDrawContext {
+        GLuint LineDataVao;
+        GLuint MeshTransformVbo;
+        GLuint MeshSizeVbo;
+        u32 InstanceCount;
+        Vec3 Color;
+
+        std::vector<Vec3> InstancedTransformsScratch;
+        std::vector<Vec3> InstancedSizeScratch;
     };
 
     struct Ray {
@@ -71,6 +82,7 @@ namespace ceeditor {
 
         void UpdateCameraMovementSpeed(float speedIncrement);
         void Reset();
+        void InitDebug();
 
         // @todo
         // void DrawDebug();
@@ -93,11 +105,15 @@ namespace ceeditor {
         void DrawIndexedElements();
         void DrawFlatElements();
         void DrawInstancedFlatElements();
-        void DrawDebugBoundingBoxes();
         void BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3 baseColor);
 
         void AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color);
         void HandleCameraMoveMotion();
         void DrawGrid();
+
+        // Debug stuff
+        bool DebugIsDirty = false;
+        Shader* DebugLineShader;
+        DebugAABBDrawContext DebugAABBContext; // holds all lines for all objects.
     };
 }

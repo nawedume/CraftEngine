@@ -6,7 +6,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 enable_testing()
 
-add_subdirectory(Draw)
 add_subdirectory(CraftEngine)
 add_subdirectory(test)
 add_subdirectory(editor)

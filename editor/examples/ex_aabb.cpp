@@ -1,55 +1,63 @@
 #include "Core.h"
-#include "Drawing.h"
-#include "GLFW/glfw3.h"
 #include "Math.hpp"
 #include "World.h"
 #include "glm/gtc/constants.hpp"
-#include "glm/gtc/quaternion.hpp"
-// #include "utils.hpp"
-// #include "worldrender.hpp"
-#include <cstdio>
 #include <vector>
 #include "editor.h"
 #include "ex_aabb.h"
 
-void ControlBody(draw::GSystem *gsys, ce::BodyId bid1, ce::World *world, float deltaTime) {
-
-    ce::Vec3 movement{0};
-    GLFWwindow *window = gsys->mWindow;
-    if (glfwGetKey(window, GLFW_KEY_UP))
-        movement.z += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_DOWN))
-        movement.z -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT))
-        movement.x += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_LEFT))
-        movement.x -= 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_PERIOD))
-        movement.y += 1.0f;
-    if (glfwGetKey(window, GLFW_KEY_COMMA))
-        movement.y -= 1.0f;
-
-    static bool isRotate = false;
-    if (gsys->IsKeyClicked(GLFW_KEY_R)) {
-        isRotate = !isRotate;
-    }
-
-    if (isRotate) {
-        ce::Quat q = world->Transforms[bid1].Orientation;
-        ce::Quat m;
-        m.w = 0.0f;
-        m.x = movement.x;
-        m.y = movement.y;
-        m.z = movement.z;
-        q += 0.5f * deltaTime * m * q;
-        q = normalize(q);
-        world->Transforms[bid1].Orientation = q;
-    } else {
-        world->Transforms[bid1].Pos += deltaTime * movement;
-    }
-}
-
+// void ControlBody(draw::GSystem *gsys, ce::BodyId bid1, ce::World *world, float deltaTime) {
+//
+//     ce::Vec3 movement{0};
+//     GLFWwindow *window = gsys->mWindow;
+//     if (glfwGetKey(window, GLFW_KEY_UP))
+//         movement.z += 1.0f;
+//     if (glfwGetKey(window, GLFW_KEY_DOWN))
+//         movement.z -= 1.0f;
+//     if (glfwGetKey(window, GLFW_KEY_RIGHT))
+//         movement.x += 1.0f;
+//     if (glfwGetKey(window, GLFW_KEY_LEFT))
+//         movement.x -= 1.0f;
+//     if (glfwGetKey(window, GLFW_KEY_PERIOD))
+//         movement.y += 1.0f;
+//     if (glfwGetKey(window, GLFW_KEY_COMMA))
+//         movement.y -= 1.0f;
+//
+//     static bool isRotate = false;
+//     if (gsys->IsKeyClicked(GLFW_KEY_R)) {
+//         isRotate = !isRotate;
+//     }
+//
+//     if (isRotate) {
+//         ce::Quat q = world->Transforms[bid1].Orientation;
+//         ce::Quat m;
+//         m.w = 0.0f;
+//         m.x = movement.x;
+//         m.y = movement.y;
+//         m.z = movement.z;
+//         q += 0.5f * deltaTime * m * q;
+//         q = normalize(q);
+//         world->Transforms[bid1].Orientation = q;
+//     } else {
+//         world->Transforms[bid1].Pos += deltaTime * movement;
+//     }
+// }
+//
 void ExAABBSetup(ceeditor::Editor* editor) {
+    ce::BoxDef def1 = ce::BoxDef(1.0, { 1.0, 1.0, 1.0 });
+    ce::Quat rot = ce::aaToQuat(ce::Vec3(0, 0, 1), glm::pi<float>() / 2.0f);
+    ce::BodyId boxId = editor->AddBox(
+        def1,
+        ce::Transform{ {-0.1f, 0.0, 0.0}, rot },
+        ce::Vec3(1.0, 0.0, 0.0));
+
+    ce::World* world = editor->World;
+    editor->World->Transforms[boxId].Pos.x -= 0.1f;
+
+    ce::CapsuleDef capsuleDef = ce::CapsuleDef{.Mass = 1.0f, .Radius = 1.0f, .HalfLength = 1.0f};
+    ce::BodyId capsuleId = editor->AddCapsule(capsuleDef, ce::Transform{.Pos = {-2.0, 0.0, 0.0}}, ce::Vec3(0.3, 0.5, 0.3));
+
+    // editor->DrawBoundingBoxes();
 }
 
 /*

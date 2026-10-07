@@ -211,6 +211,7 @@ void Editor::AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color) {
 BodyId Editor::AddConvex(ConvexHullDef def, Transform t, Vec3 color) {
     BodyId bodyId = AddConvexHull(this->World, t, def);
     AddConvexHullMesh(bodyId, def.Hull, color);
+    DebugIsDirty = true;
     return bodyId;
 }
 
@@ -218,13 +219,17 @@ BodyId Editor::AddBox(BoxDef def, Transform t, Vec3 color) {
     BodyId bodyId = ce::AddBox(this->World, t, def);
     GraphicBuffers buffer = createBoxMesh(def.HalfEdge.x, def.HalfEdge.y, def.HalfEdge.z);
     BuffersToDrawContext(bodyId, buffer, color);
+    DebugIsDirty = true;
     return bodyId;
 }
 
 BodyId Editor::AddCapsule(CapsuleDef def, Transform t, Vec3 color) {
     BodyId bodyId = ce::AddCapsule(this->World, t, def);
-    GraphicBuffers buffer = createCapsuleMesh(def.Radius, def.HalfLength, def.Radius * 10, def.Radius * 10);
+
+    int res = static_cast<int>(def.Radius * 20);
+    GraphicBuffers buffer = createCapsuleMesh(def.Radius, def.HalfLength, res, res);
     BuffersToDrawContext(bodyId, buffer, Vec3(0.0, 0.3, 0.5));
+    DebugIsDirty = true;
     return bodyId;
 }
 
@@ -232,10 +237,12 @@ BodyId Editor::AddBall(SphereDef def, Transform t, Vec3 color) {
     BodyId bodyId = ce::AddSphere(this->World, t, def);
     GraphicBuffers buffer = createSphereMesh(def.Radius, def.Radius * 10, def.Radius * 10);
     BuffersToDrawContext(bodyId, buffer, Vec3(0.1, 0.3, 0.7));
+    DebugIsDirty = true;
     return bodyId;
 }
 
 void Editor::BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3 baseColor)  {
+    // @todo Add a cache for the unique id for the buffer
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -256,7 +263,7 @@ void Editor::BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3
         GLuint ebo;
         glGenBuffers(1, &ebo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer.NumIndices, buffer.IndexBuffer, GL_STATIC_DRAW);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer.NumIndices * sizeof(unsigned int), buffer.IndexBuffer, GL_STATIC_DRAW);
 
         DrawContext context = {
             .Body = bodyId,
@@ -277,6 +284,7 @@ void Editor::BuffersToDrawContext(BodyId bodyId, GraphicBuffers buffer, ce::Vec3
 
         FlatElements.push_back(context);
     }
+    glBindVertexArray(0);
 
     free(buffer.VertexBuffer);
     free(buffer.IndexBuffer);
@@ -320,6 +328,7 @@ void Editor::DrawIndexedElements() {
         SolidShader->setVec3("uBaseColor", (float*) glm::value_ptr(context.BaseColor));
 
         glBindVertexArray(context.MeshDataVao);
+        printf("Num indices %d\n", context.Size);
         glDrawElements(GL_TRIANGLES, context.Size, GL_UNSIGNED_INT, nullptr);
     }
 }
@@ -415,6 +424,99 @@ void Editor::UpdateCameraMovementSpeed(float speedIncrement) {
 void Editor::Reset() {
     delete World;
     World = NewWorld();
+}
+
+void Editor::DrawBoundingBoxes() {
+    auto& drawTrans = DebugAABBContext.InstancedTransformsScratch;
+    auto& drawSize  = DebugAABBContext.InstancedSizeScratch;
+    auto n = World->NumBodies();
+
+    // Make sure we have at least this much space
+    drawTrans.resize(n);
+    drawSize.resize(n);
+
+    for (int i = 0; i < n; ++i) {
+        auto aabb = World->AABBs[i];
+        drawTrans[i] = aabb.Center;
+        drawSize[i] = aabb.HalfEdge;
+    }
+
+    glBindVertexArray(DebugAABBContext.LineDataVao);
+
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshSizeVbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedSizeScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data());
+
+    glBindBuffer(GL_ARRAY_BUFFER, DebugAABBContext.MeshTransformVbo);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, DebugAABBContext.InstancedTransformsScratch.size() * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data());
+
+
+    DebugLineShader->use();
+    Mat4 cameraMat = this->ViewCamera->GetViewMatrix();
+    DebugLineShader->setFloatMat4("uCameraTransform", glm::value_ptr(cameraMat));
+    DebugLineShader->setFloatMat4("uProjTransform", glm::value_ptr(ProjMat));
+    DebugLineShader->setVec3("uColor", (float*) glm::value_ptr(DebugAABBContext.Color));
+
+    glDrawArraysInstanced(GL_LINES, 0, 12, n);
+}
+
+void Editor::InitDebug() {
+    DebugLineShader = new Shader("../editor/shaders/aabb_line_shader.glsl", "../editor/shaders/solid_color.glsl");
+
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+
+    float AABB_BUF_LINES[] {
+        -1.0,   -1.0,   -1.0,   1.0,    -1.0,   -1.0,
+        -1.0,   -1.0,   -1.0,  -1.0,     1.0,   -1.0,
+        -1.0,   -1.0,   -1.0,  -1.0,    -1.0,    1.0,
+
+         1.0,    1.0,   -1.0,  -1.0,     1.0,   -1.0,
+         1.0,    1.0,   -1.0,   1.0,    -1.0,   -1.0,
+         1.0,    1.0,   -1.0,   1.0,     1.0,    1.0,
+
+         1.0,   -1.0,    1.0,  -1.0,    -1.0,    1.0,
+         1.0,   -1.0,    1.0,   1.0,     1.0,    1.0,
+         1.0,   -1.0,    1.0,   1.0,    -1.0,   -1.0,
+
+        -1.0,    1.0,    1.0,   1.0,     1.0,    1.0,
+        -1.0,    1.0,    1.0,  -1.0,    -1.0,    1.0,
+        -1.0,    1.0,    1.0,  -1.0,     1.0,   -1.0,
+    };
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(AABB_BUF_LINES), AABB_BUF_LINES, GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void*) 0);
+
+    DebugAABBContext = DebugAABBDrawContext{
+        .LineDataVao = vao,
+        .InstanceCount = World->NumBodies(),
+        .Color = ce::Vec3(0.6588235294, 0.3960784314, 0.7098039216),
+    };
+    DebugAABBContext.InstancedTransformsScratch.reserve(DebugAABBContext.InstanceCount);
+    DebugAABBContext.InstancedSizeScratch.reserve(DebugAABBContext.InstanceCount);
+
+    GLuint instancedTransformVbo;
+    glGenBuffers(1, &instancedTransformVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, instancedTransformVbo);
+    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedTransformsScratch.data(), GL_DYNAMIC_DRAW);
+
+    // One for position the other for orientation
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(ce::Real), (void*) 0);
+    glVertexAttribDivisor(1, 1);
+
+    GLuint instancedSizeVbo;
+    glGenBuffers(1, &instancedSizeVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, instancedSizeVbo);
+    glBufferData(GL_ARRAY_BUFFER, DebugAABBContext.InstanceCount * sizeof(Vec3), DebugAABBContext.InstancedSizeScratch.data(), GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(ce::Real), (void*) 0);
+    glVertexAttribDivisor(2, 1);
 }
 
 }

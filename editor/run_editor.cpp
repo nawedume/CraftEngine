@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
-#include "World.h"
 #include "glad.h"
 #include "GLFW/glfw3.h"
+
+#include "World.h"
 #include "editor.h"
 
 #include "imgui.h"
@@ -67,21 +68,23 @@ int main() {
 
     Editor editor(window);
 
-    BoxDef boxDef = {
-        .Mass = 1.0,
-        .HalfEdge = { 1., 1., 1. },
-    };
+    // BoxDef boxDef = {
+    //     .Mass = 1.0,
+    //     .HalfEdge = { 1., 1., 1. },
+    // };
 
-    for (int i = 0; i < 10; ++i) {
-        BodyId box = editor.AddBox(boxDef,
-            Transform{.Pos = {0.0f, 2.0f + (i * 2.1), 0.0f}}
-        );
-    }
+    // for (int i = 0; i < 10; ++i) {
+    //     BodyId box = editor.AddBox(boxDef,
+    //         Transform{.Pos = {0.0f, 2.0f + (i * 2.1), 0.0f}}
+    //     );
+    // }
 
-    BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.8, 0.8, 0.8 });
-    SetStatic(editor.World, floor);
+    // BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.8, 0.8, 0.8 });
+    // SetStatic(editor.World, floor);
 
     // editor.World->GravityAcc.y = 0.0;
+
+    // editor.InitDebug();
     int activeExample = -1;
 
     printf("World interations: %d, %d\n", editor.World->Settings.NumOfSolverIterations, editor.World->Settings.NumOfRelaxationIterations);
@@ -89,22 +92,18 @@ int main() {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
 
-
         ImGui::NewFrame();
-
         ImGuiViewport* viewport = ImGui::GetMainViewport();
         float paneWidth = 300.0;
         ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x + viewport->WorkSize.x  - paneWidth, viewport->WorkPos.y));
         ImGui::SetNextWindowSize(ImVec2(paneWidth, viewport->WorkSize.y));
 
         ImGui::Begin("Editor");
-
         ImGui::Text("Examples");
 
         if (ImGui::RadioButton("AABB", &activeExample, Examples::AABB)) {
             editor.Reset();
             ExAABBSetup(&editor);
-
         } else if (ImGui::RadioButton("Joints", &activeExample, Examples::JOINTS)) {
             editor.Reset();
         } else if (ImGui::RadioButton("Bowling", &activeExample, Examples::BOWLING)) {
@@ -113,6 +112,14 @@ int main() {
             editor.Reset();
         } else if (ImGui::RadioButton("GJK", &activeExample, Examples::GJK)) {
             editor.Reset();
+        }
+
+        ImGui::Text("Debug");
+        bool debug_EnableAABB = false;
+        if (ImGui::Checkbox("Enable AABB", &debug_EnableAABB)) {
+            if (debug_EnableAABB) {
+                // editor.DrawBoundingBoxes();
+            }
         }
 
         glEnable(GL_DEPTH_TEST);
