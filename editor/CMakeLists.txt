@@ -20,6 +20,9 @@ add_executable(Editor
     ${CMAKE_SOURCE_DIR}/editor/run_editor.cpp
     ${CMAKE_SOURCE_DIR}/editor/editor.cpp
     ${CMAKE_SOURCE_DIR}/editor/examples/ex_aabb.cpp
+    ${CMAKE_SOURCE_DIR}/editor/examples/ex_boxstacking.cpp
+    ${CMAKE_SOURCE_DIR}/editor/examples/ex_joints.cpp
+    ${CMAKE_SOURCE_DIR}/editor/examples/ex_bowling.cpp
     ${CMAKE_SOURCE_DIR}/external/glad.c
     ${ImGuiSources}
 )

@@ -301,6 +301,7 @@ void Editor::DrawWorld() {
     SolidShader->setFloatMat4("uProjTransform", glm::value_ptr(ProjMat));
     SolidShader->setVec3s("uLightDir", 1, glm::value_ptr(RenderSettings.LightDir));
     SolidShader->setFloat("uAmbient", RenderSettings.AmbientIntensity);
+    SolidShader->setFloat("uLightIntensity", RenderSettings.LightIntensity);
 
     GLenum err;
     while ((err = glGetError()) != GL_NO_ERROR) {
@@ -433,6 +434,28 @@ void Editor::UpdateCameraMovementSpeed(float speedIncrement) {
 void Editor::Reset() {
     delete World;
     World = NewWorld();
+
+    std::vector<GLuint> vaos;
+    for (auto context : FlatElements) {
+        vaos.push_back(context.MeshDataVao);
+    }
+
+    for (auto context : IndexedElements) {
+        vaos.push_back(context.MeshDataVao);
+    }
+
+    for (auto context : InstancedFlatElements) {
+        vaos.push_back(context.MeshDataVao);
+    }
+
+    glDeleteVertexArrays(vaos.size(), vaos.data());
+
+    FlatElements.clear();
+    IndexedElements.clear();
+    InstancedFlatElements.clear();
+
+    DebugIsDirty = true;
+    IsSimulating = false;
 }
 
 void Editor::DrawBoundingBoxes() {

@@ -58,12 +58,14 @@ namespace ceeditor {
     struct RenderSettings {
         Vec3 LightDir = normalize(Vec3(1.0, 1.0, 1.0));
         float AmbientIntensity = 0.3;
+        float LightIntensity = 1.0;
     };
     struct Editor {
         World* World;
         RenderSettings RenderSettings {};
         float DeltaTime = 1.0 / 60.0;
         bool IsSimulating = false;
+        bool IsFirstStep = true;
 
         Editor(GLFWwindow* window);
 

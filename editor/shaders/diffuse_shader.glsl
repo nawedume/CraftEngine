@@ -6,12 +6,13 @@ in vec3 vBarycentricCoord;
 
 uniform vec3 uBaseColor;
 uniform vec3 uLightDir;
+uniform float uLightIntensity;
 uniform float uAmbient;
 
 out vec4 fColor;
 
 void main() {
-    float intensity = max(0.0, dot(vNormal, uLightDir) * 0.5);
+    float intensity = max(0.0, dot(vNormal, uLightDir) * 0.5) * uLightIntensity;
     intensity = min(intensity + uAmbient, 1.0);
     fColor = vec4(uBaseColor * intensity, 1.0);
 }

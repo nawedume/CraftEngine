@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <chrono>
 #include "camera.hpp"
+#include "ex_bowling.h"
+#include "ex_joints.h"
 #include "glad.h"
 #include "GLFW/glfw3.h"
 
@@ -14,6 +16,7 @@
 #include "imgui_impl_opengl3.h"
 
 #include "ex_aabb.h"
+#include "ex_boxstacking.h"
 
 #define WINDOW_WIDTH 1000
 #define WINDOW_HEIGHT 1000
@@ -68,7 +71,6 @@ enum Examples {
     JOINTS,
     BOWLING,
     BOX_STACKING,
-    GJK,
 };
 
 int main() {
@@ -81,28 +83,12 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init();
 
-
     Editor editor(window);
 
-    // BoxDef boxDef = {
-    //     .Mass = 1.0,
-    //     .HalfEdge = { 1., 1., 1. },
-    // };
-
-    // for (int i = 0; i < 10; ++i) {
-    //     BodyId box = editor.AddBox(boxDef,
-    //         Transform{.Pos = {0.0f, 2.0f + (i * 2.1), 0.0f}}
-    //     );
-    // }
-
-    // BodyId floor = editor.AddBox({ .HalfEdge = { 10.0, 1.0, 10.0 } }, {}, { 0.8, 0.8, 0.8 });
-    // SetStatic(editor.World, floor);
-
-    // editor.World->GravityAcc.y = 0.0;
-
     editor.InitDebug();
-    int activeExample = -1;
+    int activeExample = Examples::BOWLING;
     bool debug_EnableAABB = false;
+    float lightIntensity = 1.0;
 
     printf("World interations: %d, %d\n", editor.World->Settings.NumOfSolverIterations, editor.World->Settings.NumOfRelaxationIterations);
     while (!glfwWindowShouldClose(window)) {
@@ -116,6 +102,18 @@ int main() {
         ImGui::SetNextWindowSize(ImVec2(paneWidth, viewport->WorkSize.y));
 
         ImGui::Begin("Editor");
+        if (ImGui::Button("Reset") || editor.IsFirstStep) {
+            editor.Reset();
+            editor.IsFirstStep = false;
+
+            switch (activeExample) {
+                case Examples::AABB: ExAABBSetup(&editor); break;
+                case Examples::JOINTS: ExJointsSetup(&editor); break;
+                case Examples::BOWLING: ExBowlingSetup(&editor); break;
+                case Examples::BOX_STACKING: ExBoxStackingSetup(&editor); break;
+            }
+        }
+
         ImGui::Text("Examples");
 
         if (ImGui::RadioButton("AABB", &activeExample, Examples::AABB)) {
@@ -123,12 +121,22 @@ int main() {
             ExAABBSetup(&editor);
         } else if (ImGui::RadioButton("Joints", &activeExample, Examples::JOINTS)) {
             editor.Reset();
+            ExJointsSetup(&editor);
         } else if (ImGui::RadioButton("Bowling", &activeExample, Examples::BOWLING)) {
             editor.Reset();
+            ExBowlingSetup(&editor);
         } else if (ImGui::RadioButton("Box Stacking", &activeExample, Examples::BOX_STACKING)) {
             editor.Reset();
-        } else if (ImGui::RadioButton("GJK", &activeExample, Examples::GJK)) {
-            editor.Reset();
+            ExBoxStackingSetup(&editor);
+        }
+
+        if (ImGui::CollapsingHeader("Render Settings")) {
+            ImGui::SliderFloat("Light Intensity", &editor.RenderSettings.LightIntensity, 0.0, 10.0);
+            ImGui::SliderFloat("Ambient Intensity", &editor.RenderSettings.AmbientIntensity, 0.0, 10.0);
+        }
+
+        if (activeExample == Examples::JOINTS) {
+            ExJointsUISetup(&editor);
         }
 
         ImGui::Text("Debug");
