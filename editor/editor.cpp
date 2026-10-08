@@ -3,7 +3,6 @@
 #include "camera.hpp"
 #include "editor.h"
 #include "World.h"
-#include "AABB.h"
 #include "glm/detail/type_vec.hpp"
 #include "shader.hpp"
 #include <OpenGL/gl.h>
@@ -17,6 +16,8 @@
 #define MAX_NUM_VERTICES MAX_NUM_FEATURES_CONVEX_HULL * 8
 // 3 indicies per face, times the max number of faces times a multiplier
 #define MAX_NUM_INDICES  3 * MAX_NUM_FEATURES_CONVEX_HULL * 2
+
+#define FOV glm::radians(45.0)
 
 namespace ceeditor {
 
@@ -61,7 +62,7 @@ Editor::Editor(GLFWwindow* window): Window(window) {
         -35.0
     );
     float aspect = static_cast<float>(width) / height;
-    ProjMat = glm::perspective((float)glm::radians(45.0), aspect, 0.1f, 1000.f);
+    ProjMat = glm::perspective((float) FOV, aspect, 0.1f, 1000.f);
 
     World = NewWorld();
 
@@ -101,6 +102,28 @@ Editor::Editor(GLFWwindow* window): Window(window) {
         .BaseColor = Vec3(0.3, 0.3, 0.3),
     };
     GridShader = new Shader("../editor/shaders/grid_vs_shader.glsl", "../editor/shaders/grid_fs_shader.glsl");
+
+    float bgVert[] {
+        -1.0, -1.0,
+         1.0, -1.0,
+         1.0,  1.0,
+
+        -1.0, -1.0,
+         1.0,  1.0,
+        -1.0,  1.0,
+    };
+    glGenVertexArrays(1, &BackgroundVao);
+    glBindVertexArray(BackgroundVao);
+
+    GLuint bgVbo;
+    glGenBuffers(1, &bgVbo);
+    glBindBuffer(GL_ARRAY_BUFFER, bgVbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bgVert), bgVert, GL_STATIC_DRAW);
+    BackgroundShader = new Shader("../editor/shaders/bg_vs.glsl", "../editor/shaders/bg_fs.glsl");
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, (void*) 0);
+
+    glBindVertexArray(0);
 }
 
 void Editor::AddConvexHullMesh(BodyId bodyId, ConvexHull* hull, Vec3 color) {
@@ -578,6 +601,28 @@ void Editor::ReInitDebug() {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(ce::Vec3), (void*) 0);
     glVertexAttribDivisor(2, 1);
+}
+
+void Editor::DrawBackground() {
+    BackgroundShader->use();
+    glBindVertexArray(BackgroundVao);
+
+    Mat4 viewMat = ViewCamera->GetViewMatrix();
+    Mat3 cameraMat = transpose(Mat3(viewMat));
+    BackgroundShader->setFloatMat3("uCameraLocalToWorld", (float*) glm::value_ptr(cameraMat));
+
+    float fov_2 = (FOV / 2.0);
+    Vec2 scale {};
+    scale.y = tan(fov_2);
+
+    int width, height;
+    glfwGetWindowSize(Window, &width, &height);
+    float aspect = static_cast<float>(width) / height;
+    scale.x = scale.y * aspect;
+
+    BackgroundShader->setVec2("uScaleAt1Unit", (float*) glm::value_ptr(scale));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Editor::CleanupGL() {

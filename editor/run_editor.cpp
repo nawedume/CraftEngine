@@ -154,6 +154,10 @@ int main() {
 
         ImGui::End();
 
+        glDepthMask(GL_FALSE);
+        editor.DrawBackground();
+        glDepthMask(GL_TRUE);
+
         editor.HandleInput();
         editor.DrawWorld();
         if (debug_EnableAABB) {

@@ -75,6 +75,7 @@ namespace ceeditor {
         BodyId AddBall(SphereDef def, Transform t, Vec3 color);
 
         void DrawWorld();
+        void DrawBackground();
         void DrawBoundingBoxes();
         BodyId RayCast(Ray ray);
         void HandleInput();
@@ -113,6 +114,10 @@ namespace ceeditor {
         void HandleCameraMoveMotion();
         void DrawGrid();
         void CleanupGL();
+
+        // background
+        GLuint BackgroundVao;
+        Shader* BackgroundShader;
 
         // Debug stuff
         bool DebugIsDirty = false;
