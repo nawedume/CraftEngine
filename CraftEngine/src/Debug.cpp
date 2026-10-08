@@ -20,7 +20,7 @@ void SetDrawDebugBallFn(drawDebugBallWithColor callback) { DrawDebugBallWithColo
 
 void SetDrawArrowDebugFn(drawDebugArrow callback) { DrawDebugArrowFn = callback; }
 
-void DrawDebugBall(Vec3 pos) { DrawDebugBall(pos); }
+void DrawDebugBall(Vec3 pos) { DrawDebugBallFn(pos); }
 
 void DrawDebugBall(Vec3 pos, Quat q) { DrawDebugBallWithOriFn(pos, q); }
 

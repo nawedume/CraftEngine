@@ -3,6 +3,7 @@
 #include "Core.h"
 #include <unordered_map>
 #include <vector>
+#include "Timers.h"
 
 namespace ce {
     Vec3 const X_AXIS = Vec3(1.0f, 0.0f, 0.0f);
@@ -81,7 +82,7 @@ namespace ce {
 
     struct Material {
         Real Restitution { 0.0f };
-        Real Friction { 0.2f };
+        Real Friction { 0.5f };
     };
 
     struct WorldContactSet;
@@ -132,8 +133,8 @@ namespace ce {
         Real PenetrationSlop = 0.05;
         Real StabilizationTerm = 0.1;
         Real RestitutionSlop = 0.05;
-        Real NumOfSolverIterations = 5;
-        Real NumOfRelaxationIterations = 5;
+        int NumOfSolverIterations = 5;
+        int NumOfRelaxationIterations = 5;
     };
 
     struct BodyPair {
@@ -148,6 +149,10 @@ namespace ce {
         Mat3 EffectiveMass;
         Vec3 Bias { 0.0, 0.0, 0.0 };
         Vec3 Impulse { 0.0, 0.0, 0.0 };
+    };
+
+    struct BodyFlags {
+        u32 IsKinematic: 1;
     };
 
     struct World {
@@ -172,6 +177,9 @@ namespace ce {
         WorldContactSet* ContactSet;
 
         ImpulseStore StoredImpulses;
+
+        // profiling
+        TimerManager TimerManager;
 
         Vec3 GravityAcc { 0.0f, -9.81f, 0.0f };
 
@@ -307,8 +315,8 @@ namespace ce {
         // Tangent Impulse
         Real TImpulse[2];
 
-        Real NInverseEffectiveMass;
-        Real TInverseEffectiveMass[2];
+        Real NEffectiveMass;
+        Real TEffectiveMass[2];
 
         Real Bias { 0.0f };
     };
@@ -342,4 +350,6 @@ namespace ce {
     typedef u32 JointId;
 
     JointId AddRevoluteJoint(World* world, BodyId b1, BodyId b2, Vec3 globalAnchor);
+
+    void SetStatic(World* world, BodyId bodyId);
 };

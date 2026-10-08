@@ -12,6 +12,7 @@ namespace ce {
 Real const ZERO = Real(0.0);
 Real const MAX_REAL = std::numeric_limits<Real>::max();
 Real const MIN_REAL = std::numeric_limits<Real>::lowest();
+Mat3 const ZERO_MAT = Mat3(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
 inline Vec3 cross(Vec3 a, Vec3 b) { return glm::cross(a, b); }
 
@@ -100,6 +101,10 @@ inline Real sqrt(Real a) { return glm::sqrt(a); }
 inline Vec3 abs(Vec3 v) { return glm::abs(v); }
 
 inline Real abs(Real a) { return glm::abs(a); }
+
+inline Real cosh(Real a) {
+    return glm::cosh(a);
+}
 
 inline Mat3 matrixCross3(Vec3 v) {
     return glm::matrixCross3(v);

@@ -2,6 +2,7 @@
 
 #include "Core.h"
 #include <string>
+#include <functional>
 
 /**
 * Quick and easy way of inserting draw calls in the non-user facing code.
@@ -10,7 +11,7 @@ namespace ce {
 
     extern bool isOn;
 
-    typedef void (*drawDebugBall)(Vec3);
+    using drawDebugBall = std::function<void(Vec3)>;
     typedef void (*drawDebugBallWithOri)(Vec3, Quat q);
     typedef void (*drawDebugBallWithColor)(Vec3, Vec3 q);
     typedef void (*drawDebugArrow)(Vec3 pos, Vec3 dir);

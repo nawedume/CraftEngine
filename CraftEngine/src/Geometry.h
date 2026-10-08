@@ -96,7 +96,6 @@ static void GJKGetCloestPointOnLine(Vec3 inA, Vec3 inB, GJKData *data) {
     if (t <= 0) {
         // this should never occur!
         SET_SIMPLEX_1(inA, data, 0);
-        assert(false);
     } else if (t > abSqMag) {
         SET_SIMPLEX_1(inB, data, 1);
     } else {
